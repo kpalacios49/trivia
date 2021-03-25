@@ -2,6 +2,20 @@ const { group } = require('console');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
+const admin = require("firebase-admin");
+
+
+const serviceAccount = require("../trivia-aeccd-firebase-adminsdk-khbrc-3f8aa20754.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://trivia-aeccd-default-rtdb.firebaseio.com/'
+});
+
+var database = admin.database();
+
+// console.log(database)
+
 
 
 const io = require('socket.io')(http, {
@@ -23,55 +37,64 @@ let sum = 0
 
 io.use((socket, next) => {
   const username = socket.handshake.auth.username;
-  const group = socket.handshake.auth.group;
+  const group_id = socket.handshake.auth.group_id;
+  const is_admin = !!socket.handshake.auth.is_admin;
+
 
   if (!username) {
     return next(new Error("invalid username"));
   }
   socket.username = username;
-  socket.group = group;
+  socket.group_id = group_id;
+  socket.is_admin = is_admin;
+
   next();
 });
 
-const users = [];
+// const users = [];
 
 
 io.on('connection', (socket) => {
   console.log("Usuario conecntado : " + socket.id)
 
 
-  users.push({
-    userID: socket.id,
-    username: socket.username,
-    group: socket.group
-  });
-  console.log(users)
+  admin.database().ref(`groups/${socket.group_id}/${socket.id}`).set(
+    {
+      username: socket.username,
+      is_admin: socket.is_admin
+    }
+  );
+
+  showMembers(socket.group_id)
+
+  // var members = admin.database().ref(`groups/${socket.group_id}`);
+  // members.on('value', (snapshot) => {
+  //   const members = snapshot.val();
+  //   // console.log(data)
+  //   io.emit(`membersConnected${socket.group_id}`, members)
+
+  // });
 
 
-  const group = 1;
 
-  io.emit(`usersConnected${group}`, users)
-
-
-  // socket.on("connect", () => {
-  //     console.log("conectado")
-  //     users.forEach((user) => {
-  //       if (user.self) {
-  //         user.connected = true;
-  //       }
-  //     });
-  //   });
 
   socket.on("disconnect", () => {
     console.log("desconectado")
     console.log(socket.id)
-    const index = users.findIndex(u => u.userID == socket.id)
-    if (index != -1) {
-      users.splice(index, 1)
-      console.log(users)
-      io.emit(`usersConnected${group}`, users)
+    admin.database().ref(`groups/${socket.group_id}/${socket.id}`).remove();
 
-    }
+    showMembers(socket.group_id)
+
+
   });
 })
 
+
+const showMembers = (group_id) => {
+  var members = admin.database().ref(`groups/${group_id}`);
+  members.on('value', (snapshot) => {
+    const members = snapshot.val();
+    // console.log(data)
+    io.emit(`membersConnected${group_id}`, members)
+  });
+}
