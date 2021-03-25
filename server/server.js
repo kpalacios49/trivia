@@ -55,7 +55,8 @@ io.use((socket, next) => {
 
 
 io.on('connection', (socket) => {
-  console.log("Usuario conecntado : " + socket.id)
+  // socket.removeAllListeners()
+  console.log("Usuario conectado : " + socket.id)
 
 
   admin.database().ref(`groups/${socket.group_id}/${socket.id}`).set(
@@ -65,8 +66,16 @@ io.on('connection', (socket) => {
     }
   );
 
-  showMembers(socket.group_id)
+  // showMembers(socket.group_id)
 
+
+  // socket.on('membersList', () => {
+
+    showMembers(socket.group_id)
+
+
+
+  // });
   // var members = admin.database().ref(`groups/${socket.group_id}`);
   // members.on('value', (snapshot) => {
   //   const members = snapshot.val();
@@ -79,22 +88,19 @@ io.on('connection', (socket) => {
 
 
   socket.on("disconnect", () => {
-    console.log("desconectado")
-    console.log(socket.id)
+    console.log("Usuario desconectado : " + socket.id)
     admin.database().ref(`groups/${socket.group_id}/${socket.id}`).remove();
 
     showMembers(socket.group_id)
-
+    // socket.emit('membersList')
 
   });
 })
 
 
 const showMembers = (group_id) => {
-  var members = admin.database().ref(`groups/${group_id}`);
-  members.on('value', (snapshot) => {
-    const members = snapshot.val();
-    // console.log(data)
-    io.emit(`membersConnected${group_id}`, members)
-  });
+  let members = admin.database().ref(`groups/${group_id}`);
+  members.once('value', (snapshot) => {
+    return io.emit(`membersConnected${group_id}`, snapshot.val())
+  })
 }
