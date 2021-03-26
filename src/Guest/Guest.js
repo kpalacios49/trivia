@@ -6,13 +6,38 @@ import { io } from "socket.io-client";
 const Guest = () => {
 
     const { group_id } = useParams();
+
     const { username } = useParams();
 
     const [members, setMembers] = useState([]);
 
+    const [trivia, setTrivia] = useState([]);
+
     const history = useHistory();
 
     const socket = io("http://localhost:8080", { autoConnect: false });
+
+    const checkAnswer = (event) => {
+        const answer_selected = event.target.innerHTML
+        const question = event.target.getAttribute('data-question')
+
+        if (!trivia[question].answer_selected) {
+            trivia[question].answer_selected = answer_selected
+            console.log(trivia)
+
+            if (answer_selected == trivia[question].correct_answer) {
+                event.target.style.color = "green"
+            }
+            else {
+                event.target.style.color = "red"
+            }
+
+        }
+
+        // emitir un evento y subirlo a firebase
+
+
+    }
 
     useEffect(() => {
         console.log("useeffect")
@@ -22,26 +47,26 @@ const Guest = () => {
         }
         socket.connect();
 
-        // socket.emit("membersList")
-
-        socket.on(`membersConnected${group_id}`, (members) => {
+        socket.on(`membersConnected`, (members) => {
             console.log(members)
 
             const admin = Object.keys(members).filter((key) => members[key].is_admin)
 
-            if(admin.length == 0) {
+            if (admin.length == 0) {
                 socket.disconnect()
-                socket.removeAllListeners(`membersConnected${group_id}`);
+                socket.removeAllListeners(`membersConnected`);
                 return history.push(`/`)
             }
-            
+
 
             const members_list = Object.keys(members).map((key) => {
-
                 return <p>{members[key].username}</p>
-                
-            }) 
+            })
             setMembers(members_list)
+        })
+
+        socket.on(`gameStarted`, (game) => {
+            setTrivia(game.trivia)
         })
 
     }, [])
@@ -56,6 +81,20 @@ const Guest = () => {
 
             {members}
 
+
+            {trivia.map((t, question_id) => (
+                <div>
+                    <p>{t.question}</p>
+                    <ul>
+                        <li style={{ color: 'red' }}>{t.correct_answer}</li>
+
+                        {t.answers.map((value, index) => (
+                            <li key={index} data-question={question_id} onClick={checkAnswer}>{value}</li>
+                        ))}
+                    </ul>
+
+                </div>
+            ))}
         </div>
 
     )

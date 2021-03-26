@@ -12,12 +12,6 @@ admin.initializeApp({
   databaseURL: 'https://trivia-aeccd-default-rtdb.firebaseio.com/'
 });
 
-var database = admin.database();
-
-// console.log(database)
-
-
-
 const io = require('socket.io')(http, {
   cors: {
     origin: "http://localhost:3000",
@@ -55,8 +49,18 @@ io.use((socket, next) => {
 
 
 io.on('connection', (socket) => {
-  // socket.removeAllListeners()
+
   console.log("Usuario conectado : " + socket.id)
+
+  socket.join(socket.group_id)
+
+  if (socket.is_admin) {
+    admin.database().ref(`games/${socket.group_id}`).set(
+      {
+        state: "waiting"
+      }
+    )
+  }
 
 
   admin.database().ref(`groups/${socket.group_id}/${socket.id}`).set(
@@ -66,34 +70,40 @@ io.on('connection', (socket) => {
     }
   );
 
-  // showMembers(socket.group_id)
 
-
-  // socket.on('membersList', () => {
-
-    showMembers(socket.group_id)
+  showMembers(socket.group_id)
 
 
 
-  // });
-  // var members = admin.database().ref(`groups/${socket.group_id}`);
-  // members.on('value', (snapshot) => {
-  //   const members = snapshot.val();
-  //   // console.log(data)
-  //   io.emit(`membersConnected${socket.group_id}`, members)
+  socket.on('triviaQuestionsAPI', (trivia) => {
+    console.log(trivia)
+    admin.database().ref(`games/${socket.group_id}`).update(
+      {
+        trivia: trivia
+      }
+    )
+  })
 
-  // });
+  socket.on('startTrivia', ({ state }) => {
+    admin.database().ref(`games/${socket.group_id}`).update(
+      {
+        state: state
+      }
+    )
+    let game = admin.database().ref(`games/${socket.group_id}`);
+    game.once('value', (snapshot) => {
+      // return io.emit(`gameStarted${socket.group_id}`, snapshot.val())
+      return io.to(socket.group_id).emit(`gameStarted`, snapshot.val());
 
+    })
 
-
+  })
 
   socket.on("disconnect", () => {
     console.log("Usuario desconectado : " + socket.id)
     admin.database().ref(`groups/${socket.group_id}/${socket.id}`).remove();
 
     showMembers(socket.group_id)
-    // socket.emit('membersList')
-
   });
 })
 
@@ -101,6 +111,7 @@ io.on('connection', (socket) => {
 const showMembers = (group_id) => {
   let members = admin.database().ref(`groups/${group_id}`);
   members.once('value', (snapshot) => {
-    return io.emit(`membersConnected${group_id}`, snapshot.val())
+    return io.to(group_id).emit(`membersConnected`, snapshot.val());
+    // return io.emit(`membersConnected${group_id}`, snapshot.val())
   })
 }
