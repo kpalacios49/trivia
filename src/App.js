@@ -11,6 +11,8 @@ import {
 import Home from './Home/Home'
 import Admin from './Admin/Admin'
 import Guest from './Guest/Guest'
+import './index.css';
+
 
 
 
@@ -50,19 +52,22 @@ function App() {
 
   return (
     <div className="App">
-      <BrowserRouter>
-        <Switch>
-          <Route path="/admin/:name">
-            <Admin></Admin>
-          </Route>
-          <Route path="/join/:group_id/:username">
-            <Guest></Guest>
-          </Route>
-          <Route path="/">
-            <Home></Home>
-          </Route>
-        </Switch>
-      </BrowserRouter>
+      <div className="flex items-center justify-center min-h-screen bg-app-1 bg-cover">
+        <BrowserRouter>
+          <Switch>
+            <Route path="/admin/:name/:profile_image">
+              <Admin></Admin>
+            </Route>
+            <Route path="/join/:group_id/:username/:profile_image">
+              <Guest></Guest>
+            </Route>
+            <Route path="/">
+              <Home></Home>
+            </Route>
+          </Switch>
+        </BrowserRouter>
+      </div>
+
 
     </div>
   );

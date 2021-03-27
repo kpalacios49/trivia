@@ -33,6 +33,7 @@ io.use((socket, next) => {
   const username = socket.handshake.auth.username;
   const group_id = socket.handshake.auth.group_id;
   const is_admin = !!socket.handshake.auth.is_admin;
+  const profile_image = socket.handshake.auth.profile_image;
 
 
   if (!username) {
@@ -41,6 +42,7 @@ io.use((socket, next) => {
   socket.username = username;
   socket.group_id = group_id;
   socket.is_admin = is_admin;
+  socket.profile_image = profile_image;
 
   next();
 });
@@ -66,6 +68,7 @@ io.on('connection', (socket) => {
   admin.database().ref(`groups/${socket.group_id}/${socket.id}`).set(
     {
       username: socket.username,
+      profile_image: socket.profile_image,
       is_admin: socket.is_admin
     }
   );
@@ -97,6 +100,14 @@ io.on('connection', (socket) => {
 
     })
 
+  })
+
+  socket.on('resultAnswers', (trivia) => {
+    admin.database().ref(`results/${socket.group_id}/${socket.id}`).set({
+      score: 500,
+      responses: trivia
+    }
+    );
   })
 
   socket.on("disconnect", () => {
