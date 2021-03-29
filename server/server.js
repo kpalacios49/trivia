@@ -3,7 +3,9 @@ const express = require('express');
 const app = express();
 const http = require('http').Server(app);
 const admin = require("firebase-admin");
+const cors = require('cors')
 
+app.use(cors)
 
 const serviceAccount = require("../trivia-aeccd-firebase-adminsdk-khbrc-3f8aa20754.json");
 
@@ -21,11 +23,15 @@ const io = require('socket.io')(http, {
   }
 })
 
-
+app.get('/', (req, res) => {
+  res.send("hola")
+})
 
 // app.use(express.static)
 
 http.listen(8080, () => console.log("server ON 8080"))
+
+app.listen(8081, () => console.log("server ON 8081"))
 
 let sum = 0
 
@@ -69,7 +75,8 @@ io.on('connection', (socket) => {
     {
       username: socket.username,
       profile_image: socket.profile_image,
-      is_admin: socket.is_admin
+      is_admin: socket.is_admin,
+      score: 0
     }
   );
 
@@ -80,6 +87,9 @@ io.on('connection', (socket) => {
 
   socket.on('triviaQuestionsAPI', (trivia) => {
     console.log(trivia)
+    trivia.map(q => q.show = false)
+    trivia.map(q => q.score = 0)
+
     admin.database().ref(`games/${socket.group_id}`).update(
       {
         trivia: trivia
@@ -87,10 +97,12 @@ io.on('connection', (socket) => {
     )
   })
 
-  socket.on('startTrivia', ({ state }) => {
+  socket.on('startTrivia', ({ state, time_per_question }) => {
     admin.database().ref(`games/${socket.group_id}`).update(
       {
-        state: state
+        state: state,
+        time_per_question : time_per_question
+
       }
     )
     let game = admin.database().ref(`games/${socket.group_id}`);
@@ -103,11 +115,31 @@ io.on('connection', (socket) => {
   })
 
   socket.on('resultAnswers', (trivia) => {
-    admin.database().ref(`results/${socket.group_id}/${socket.id}`).set({
-      score: 500,
-      responses: trivia
-    }
+    
+    admin.database().ref(`results/${socket.group_id}/${socket.id}`).set(
+      trivia
     );
+
+    
+
+     const total_score = Object.values(trivia).reduce((t, {score}) => t + score, 0)
+
+      // console.log("SCORE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      // console.log(trivia)
+      console.log(total_score)
+
+    admin.database().ref(`groups/${socket.group_id}/${socket.id}`).update(
+      {
+        score: total_score
+      }
+    );
+  showMembers(socket.group_id)
+    
+    // let members = admin.database().ref(`groups/${socket.group_id}`);
+    // members.once('value', (snapshot) => {
+    //   return io.to(socket.group_id).emit(`membersConnected`, snapshot.val());
+    // })
+
   })
 
   socket.on("disconnect", () => {
@@ -123,6 +155,5 @@ const showMembers = (group_id) => {
   let members = admin.database().ref(`groups/${group_id}`);
   members.once('value', (snapshot) => {
     return io.to(group_id).emit(`membersConnected`, snapshot.val());
-    // return io.emit(`membersConnected${group_id}`, snapshot.val())
   })
 }

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useHistory } from "react-router-dom";
 import { io } from "socket.io-client";
 import '../index.css';
+import TriviaQuestion from '../TriviaQuestion/TriviaQuestion'
+
 
 
 
@@ -17,37 +19,16 @@ const Guest = () => {
 
     const [trivia, setTrivia] = useState([]);
 
+    const [time, setTime] = useState(10);
+
     const history = useHistory();
 
     const [socket, setSocket] = useState(io("http://localhost:8080", { autoConnect: false }));
 
+    let time_counter_start = new Date().getTime() / 1000;
 
-    const checkAnswer = (event) => {
-        const answer_selected = event.target.getAttribute('data-answer')
-        const question = event.target.getAttribute('data-question')
+    let question_id = 0
 
-        if (!trivia[question].answer_selected) {
-            trivia[question].answer_selected = answer_selected
-            console.log(trivia)
-
-            event.target.classList.remove('bg-indigo-200')
-
-            if (answer_selected == trivia[question].correct_answer) {
-                event.target.classList.add('bg-green-400')
-            }
-            else {
-                event.target.classList.add('bg-red-400')
-            }
-
-        }
-
-        socket.emit("resultAnswers", trivia)
-
-        const all_answers_made = trivia.filter((t) => !t.answer_selected)
-        if (all_answers_made == 0) {
-            alert("Termino!")
-        }
-    }
 
     useEffect(() => {
         console.log("useeffect")
@@ -70,74 +51,120 @@ const Guest = () => {
             }
 
 
-            const members_list = Object.keys(members).map((key) => {
+            // const members_list = 
+            setMembers(members)
+        })
+
+
+        
+        socket.on(`gameStarted`, (game) => {
+
+            if (game.trivia) game.trivia[question_id].show = true
+
+            setTrivia(game.trivia ?? [])
+
+
+            // startTimer(game.time_per_question)
+        })
+
+    }, [])
+
+    // const startTimer = (seconds) => {
+    //     console.log(seconds)
+    //     // let time_start = new Date().getTime() / 1000;
+    //     console.log(time_counter_start)
+    // }
+
+
+    const handleAnswerSelected = (question_id, question) => {
+        const time_counter_finish = new Date().getTime() / 1000;
+
+        
+
+        question.response_time = time_counter_finish - time_counter_start
+        question.time = time
+
+        const score = Math.round((question.time - question.response_time) * 1000 / question.time)
+
+        question.score = (question.answer_selected.is_correct && question.response_time <= 10 && score > 0) ? score : 0
+
+        console.log(trivia)
+
+
+        trivia[question_id] = question
+
+        socket.emit("resultAnswers", trivia)
+
+
+        const all_answers_made = trivia.filter((t) => !t.answer_selected)
+        if (all_answers_made == 0) {
+            alert("Termino!")
+        }
+
+
+
+        trivia[question_id].show = false;
+
+        question_id++
+        setTrivia([...trivia])
+
+        setTimeout(() => {
+            if (trivia[question_id]) trivia[question_id].show = true;
+            setTrivia([...trivia])
+            time_counter_start = new Date().getTime() / 1000
+        }, 1000, trivia, question_id);
+
+
+
+
+    }
+
+    return (
+        <div className="relative w-full max-w-md p-4 bg-white rounded-3xl">
+            <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl">
+                <div className="flex items-center space-x-3 pr-8 font-semibold text-gray-700">
+                    <span>Clasificación</span>
+                </div>
+                <div className="flex-grow p-3 text-left">
+                    <div className="font-semibold text-gray-700">
+                        Nombre
+                    </div>
+                </div>
+                <div className="p-2">
+                    <span className="font-semibold text-gray-700">Puntuación</span>
+                </div>
+            </div>
+            {Object.keys(members).map((key) => {
                 return (
                     <>
-                        <div className="bg-white w-full flex items-center p-2 rounded-3xl shadow border">
-                            <div className="flex items-center space-x-4">
-                                <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-16 h-16 rounded-full" />
+                        <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl bg-gray-50">
+                        <div className="flex items-center space-x-3">
+                                <span className="pl-5 pr-12 text-xl font-bold">1</span>
                             </div>
-                            <div className="flex-grow p-3">
+                            <div className="flex items-center space-x-3">
+                                <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-10 h-10 rounded-full" />
+                            </div>
+                            <div className="flex-grow p-3 text-left">
                                 <div className="font-semibold text-gray-700">
                                     {members[key].username}
                                 </div>
                             </div>
                             <div className="p-2">
-                                <span class="block h-4 w-4 bg-green-400 rounded-full bottom-0 right-0"></span>
+                                <span className="font-bold">{members[key].score} </span><span className="text-sm">pts</span>
                             </div>
                         </div>
                     </>
                 )
 
 
-            })
-            setMembers(members_list)
-        })
+            })}
 
-        socket.on(`gameStarted`, (game) => {
-            setTrivia(game.trivia ?? [])
-        })
-
-    }, [])
-
-    return (
-        <div className="relative w-full max-w-md p-4 bg-white rounded-3xl">
+            
 
 
-            {/* <h1>Guest</h1> */}
-            {/* 
-            <h1>Nombre {username}</h1>
-            <h2>Grupo {group_id}</h2> */}
+            {trivia.map((question, question_id) => (
+                <TriviaQuestion question={question} question_id={question_id} onAnswerSelected={handleAnswerSelected}></TriviaQuestion>
 
-            {members}
-
-
-            {trivia.map((t, question_id) => (
-                <div>
-                    <p>{t.question}</p>
-                    {/* <li style={{ color: 'red' }}>{t.correct_answer}</li> */}
-
-                    <div class="p-2 " >
-
-                    {t.answers.map((answer, index) => (
-                        <>
-                                <div key={index} data-question={question_id} data-answer={answer} onClick={checkAnswer} class="my-2 flex items-center p-4 bg-indigo-200 rounded-lg shadow-xs cursor-pointer hover:bg-indigo-500 hover:text-gray-100">
-
-                                    {/* <svg class="h-6 fill-current hover:text-gray-100" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>CSS3 icon</title><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438L1.5 0zm17.09 4.413L5.41 4.41l.213 2.622 10.125.002-.255 2.716h-6.64l.24 2.573h6.182l-.366 3.523-2.91.804-2.956-.81-.188-2.11h-2.61l.29 3.855L12 19.288l5.373-1.53L18.59 4.414z" /></svg> */}
-                                    <div>
-                                        <p class=" text-xs font-medium ml-2 text-center">
-                                            {answer}
-                                        </p>
-
-                                    </div>
-                                </div>
-                            {/* <li key={index} data-question={question_id} onClick={checkAnswer}>{value}</li> */}
-                        </>
-                    ))}
-                            </div>
-
-
-                </div>
             ))}
         </div>
 

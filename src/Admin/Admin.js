@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { io } from "socket.io-client";
 import axios from 'axios';
+import TriviaQuestion from '../TriviaQuestion/TriviaQuestion'
 
 
 
@@ -19,7 +20,7 @@ const Admin = () => {
 
     const [group, setGroup] = useState({})
 
-    const [trivia, setTrivia] = useState([]);
+    // const [trivia, setTrivia] = useState([]);
 
     const [socket, setSocket] = useState(io("http://localhost:8080", { autoConnect: false }));
 
@@ -32,6 +33,7 @@ const Admin = () => {
         }
         return result.toUpperCase();
     }
+
 
     const handleTriviaApi = async (event) => {
         event.preventDefault()
@@ -58,15 +60,13 @@ const Admin = () => {
         // .then( (res) => {
         //     console.log(res)
         // })
+        
         if (request.data.results.length > 0) {
             const trivia_response = request.data.results
             trivia_response.map(q => {
-                console.log(q)
+
+                q.question = q.question
                 q.answers = shuffle([...q.incorrect_answers, q.correct_answer])
-                // return {
-                //     // ...q,
-                //     answers: [].concat(q.incorrect_answers).push(q.correct_answer)
-                // }
             })
             console.log(trivia_response)
 
@@ -81,7 +81,7 @@ const Admin = () => {
     const startTrivia = () => {
         // Verificar que haya jugadores conectados
         // Verificar que haya QA cargadas
-        socket.emit('startTrivia', { state: "started" })
+        socket.emit('startTrivia', { state: "started", time_per_question : 10 })
 
     }
 
@@ -133,7 +133,8 @@ const Admin = () => {
         })
 
         socket.on(`gameStarted`, (game) => {
-            setTrivia(game.trivia ?? [])
+            // setTrivia(game.trivia ?? [])
+            console.log("Empezó")
         })
 
         setGroup({
@@ -222,30 +223,10 @@ const Admin = () => {
             <span>Conectados</span>
             <br />
             {members}
-
+{/* 
             {trivia.map((t) => (
-                <div>
-                    <p class="pt-4 mb-2 text-xl text-left">{t.question}</p>
-                    {/* <li style={{ color: 'red' }}>{t.correct_answer}</li> */}
-
-                    {t.answers.map(answer => (
-                        <div class="p-2 ">
-                            <div class="flex items-center p-4 bg-indigo-200 rounded-lg shadow-xs cursor-pointer hover:bg-indigo-500 hover:text-gray-100">
-
-                                {/* <svg class="h-6 fill-current hover:text-gray-100" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>CSS3 icon</title><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438L1.5 0zm17.09 4.413L5.41 4.41l.213 2.622 10.125.002-.255 2.716h-6.64l.24 2.573h6.182l-.366 3.523-2.91.804-2.956-.81-.188-2.11h-2.61l.29 3.855L12 19.288l5.373-1.53L18.59 4.414z" /></svg> */}
-                                <div>
-                                    <p class=" text-xs font-medium ml-2 text-center">
-                                        {answer}
-                                    </p>
-
-                                </div>
-                            </div>
-                        </div>
-
-                    ))}
-
-                </div>
-            ))}
+                <TriviaQuestion trivia={t}></TriviaQuestion>
+            ))} */}
 
 
 

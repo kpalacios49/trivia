@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom";
 import '../index.css';
+import './Home.css'
 import { AiOutlinePlus } from 'react-icons/ai'
+import { BsFillPlayFill } from 'react-icons/bs'
+import { BiImageAdd } from 'react-icons/bi'
+import axios from 'axios'
 
 const Home = () => {
 
@@ -10,12 +14,19 @@ const Home = () => {
     const [profileImage, setProfileImage] = useState('')
 
     const createGroup = (event) => {
-        const username = document.querySelector('form').username.value;
+
+        const username = document.querySelector('form').username;
         const profile_image = encodeURIComponent(document.querySelector('form').profile_image.value);
 
-        if (username) {
-            history.push(`admin/${username}/${profile_image}`);
+        if (!username.value) {
+
+            username.classList.add('border','border-red-400')
+
+            return;
         }
+
+        history.push(`admin/${username.value}/${profile_image}`);
+
     }
 
     const joinGroup = (event) => {
@@ -23,10 +34,15 @@ const Home = () => {
         const group_id = document.querySelector('form').group_id.value;
         const profile_image = encodeURIComponent(document.querySelector('form').profile_image.value);
 
+        // console.log(process.env.REACT_APP_SERVER_URL)
+        // axios.get(`${process.env.REACT_APP_SERVER_URL}/`).then(res => console.log(res))
 
-        if (username && group_id) {
-            history.push(`join/${group_id}/${username}/${profile_image}`);
+        if (!username && !group_id) {
+            return
         }
+
+        history.push(`join/${group_id}/${username}/${profile_image}`);
+
     }
 
     const selectProfileImage = () => {
@@ -67,10 +83,15 @@ const Home = () => {
             </div>
 
             <div className="relative flex flex-col items-center w-full max-w-xs p-4 bg-white rounded-3xl md:flex-row">
-                <button type="button" onClick={createGroup} className="absolute right-1 top-1 md:-right-5 md:-top-5 h-11 w-11 rounded-full bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 flex items-center justify-center">
+                <button type="button" onClick={createGroup} className="create-gane-btn absolute right-1 top-1 md:-right-5 md:-top-5 h-11 w-11 rounded-full bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 flex items-center justify-center hover:w-28 duration-200 ">
+                    <span className="text-white text-medium px-2">Crear</span>
                     <AiOutlinePlus size={22} color={'white'} />
+
                 </button>
-                <button type="button" className="-mt-28 md:-my-16 md:-ml-32 rounded-full overflow-hidden transform hover:scale-105 duration-200 " onClick={selectProfileImage}>
+                <button type="button" className="profile-image relative -mt-28 md:-my-16 md:-ml-32 rounded-full overflow-hidden transform hover:scale-105 duration-200 " onClick={selectProfileImage}>
+                    <div className="change-image">
+                        <BiImageAdd size={35} color="white"/>
+                    </div>
                     <img
                         className="w-48 h-48"
                         src={profileImage}
@@ -82,18 +103,18 @@ const Home = () => {
 
                         <form className="mt-4 ">
                             <div class="relative text-gray-600">
-                                <input type="text" name="username" placeholder="Alias" class="bg-gray-50 h-10 px-5 pr-10 rounded-lg text-sm focus:outline-none" />
+                                <input type="text" name="username" placeholder="Alias" class=" hover:bg-gray-100 bg-gray-50 h-10 px-5 pr-10 rounded-lg text-sm focus:outline-none" />
                                 {/* <button type="submit" class="absolute right-0 top-0 mt-3 mr-4">
                                     ?
                                 </button> */}
                             </div>
                             <div class="relative text-gray-600 my-2 mb-4">
-                                <input type="text" name="group_id" placeholder="Sala" class="w-52 bg-gray-50 h-20 px-5 rounded-lg text-4xl focus:outline-none text-center" />
+                                <input type="text" name="group_id" placeholder="Sala" class=" hover:bg-gray-100 w-52 bg-gray-50 h-20 px-5 rounded-lg text-4xl focus:outline-none text-center" />
                             </div>
                             <input type="hidden" name="profile_image" value={profileImage}></input>
-                            <button onClick={joinGroup}
-                                class="block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-3 font-semibold">
-                                Unirse
+                            <button type="button" onClick={joinGroup}
+                                class="block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-3 font-semibold flex items-center justify-center">
+                                <BsFillPlayFill size={25} /> <span className="px-2">Unirse</span> 
                                 </button>
 
                         </form>
