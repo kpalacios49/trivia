@@ -37,7 +37,7 @@ const Home = () => {
         // console.log(process.env.REACT_APP_SERVER_URL)
         // axios.get(`${process.env.REACT_APP_SERVER_URL}/`).then(res => console.log(res))
 
-        if (!username && !group_id) {
+        if (!username || !group_id) {
             return
         }
 

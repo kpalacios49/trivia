@@ -153,6 +153,10 @@ io.on('connection', (socket) => {
 
 const showMembers = (group_id) => {
   let members = admin.database().ref(`groups/${group_id}`);
+
+  // members.sort((a, b) => a.score - b.score);
+
+
   members.once('value', (snapshot) => {
     return io.to(group_id).emit(`membersConnected`, snapshot.val());
   })

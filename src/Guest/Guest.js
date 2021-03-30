@@ -18,11 +18,17 @@ const Guest = () => {
 
     const [members, setMembers] = useState([]);
 
+    const [scorePosition, setScorePosition] = useState(0);
+
     const [trivia, setTrivia] = useState([]);
 
     const [time, setTime] = useState(10);
 
     const [isCorrect, setIsCorrect] = useState(true);
+
+    const [membersScoreClass, setMembersScoreClass] = useState('hidden');
+
+    const [membersClass, setMembersClass] = useState('');
 
 
     const history = useHistory();
@@ -54,36 +60,28 @@ const Guest = () => {
                 return history.push(`/`)
             }
 
-
-            // const members_list = 
             setMembers(members)
         })
 
 
-        
+
         socket.on(`gameStarted`, (game) => {
 
             if (game.trivia) game.trivia[question_id].show = true
 
             setTrivia(game.trivia ?? [])
 
+            setMembersClass('hidden')
 
-            // startTimer(game.time_per_question)
         })
 
     }, [])
-
-    // const startTimer = (seconds) => {
-    //     console.log(seconds)
-    //     // let time_start = new Date().getTime() / 1000;
-    //     console.log(time_counter_start)
-    // }
 
 
     const handleAnswerSelected = (question_id, question) => {
         const time_counter_finish = new Date().getTime() / 1000;
 
-        
+
 
         question.response_time = time_counter_finish - time_counter_start
         question.time = time
@@ -92,10 +90,9 @@ const Guest = () => {
 
         question.score = (question.answer_selected.is_correct && question.response_time <= 10 && score > 0) ? score : 0
 
-        console.log(trivia)
-
-
         trivia[question_id] = question
+
+        console.log(trivia)
 
         socket.emit("resultAnswers", trivia)
 
@@ -111,52 +108,83 @@ const Guest = () => {
 
         question_id++
         setTrivia([...trivia])
+        setMembersScoreClass('')
 
         setTimeout(() => {
             if (trivia[question_id]) trivia[question_id].show = true;
             setTrivia([...trivia])
+            
+            if (all_answers_made > 0) setMembersScoreClass('hidden')
+
             time_counter_start = new Date().getTime() / 1000
-        }, 1000, trivia, question_id);
-
-
-        console.log(socket.id)
+        }, 5000, trivia, question_id);
 
     }
 
     return (
         <div className="relative w-full max-w-md p-4 bg-white rounded-3xl">
-            <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl">
-                <div className="flex items-center space-x-3 pr-8 font-semibold text-gray-700">
-                    <span>Clasificación</span>
-                </div>
-                <div className="flex-grow p-3 text-left">
-                    <div className="font-semibold text-gray-700">
-                        Nombre
+
+
+            <div className={membersClass}>
+                {Object.keys(members).map((key) => {
+                    let isUser = false
+                    if (key == socket.id) {
+                        isUser = true
+                    }
+
+                    return (
+                        // <Member member={members[key]} key={key} isCorrect={isCorrect} isUser={isUser}></Member>
+
+                        <div className={`bg-white w-full flex items-center px-1 my-1 rounded-xl bg-gray-50`}>
+                            <div className="flex items-center space-x-3">
+                                <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-10 h-10 rounded-full" />
+                            </div>
+                            <div className="flex-grow p-3 text-left">
+                                <div className="font-semibold text-gray-700">
+                                    {members[key].username}
+                                </div>
+                            </div>
+                            <div className="p-2">
+                                <span class="block h-4 w-4 bg-green-400 rounded-full bottom-0 right-0"></span>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+
+            <div className={membersScoreClass}>
+                <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl">
+                    <div className="flex items-center space-x-3 pr-8 font-semibold text-gray-700">
+                        <span>Clasificación</span>
+                    </div>
+                    <div className="flex-grow p-3 text-left">
+                        <div className="font-semibold text-gray-700">
+                            Nombre
+                    </div>
+                    </div>
+                    <div className="p-2">
+                        <span className="font-semibold text-gray-700">Puntuación</span>
                     </div>
                 </div>
-                <div className="p-2">
-                    <span className="font-semibold text-gray-700">Puntuación</span>
-                </div>
+                {Object.entries(members).sort((a, b) => {
+                    return b[1].score - a[1].score
+                })
+                    .map((member, index) => {
+                        let isUser = false
+                        if (member[0] == socket.id) {
+                            isUser = true
+                        }
+
+                        return (
+                            <Member position={index+1} member={member[1]} key={member[0]} isCorrect={isCorrect} isUser={isUser}></Member>
+                        )
+                    })}
+
             </div>
-            {Object.keys(members).map((key) => {
-                let isUser = false
-                if(key == socket.id){
-                    isUser = true
-                }
-
-                return (
-                    <Member member={members[key]} key={key} isCorrect={isCorrect} isUser={isUser}></Member>
-                )
-
-
-            })}
-
-            
-
 
             {trivia.map((question, question_id) => (
                 <TriviaQuestion question={question} question_id={question_id} onAnswerSelected={handleAnswerSelected}></TriviaQuestion>
-
             ))}
         </div>
 

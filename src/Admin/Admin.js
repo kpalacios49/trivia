@@ -70,6 +70,8 @@ const Admin = () => {
             })
             console.log(trivia_response)
 
+            // HAY QUE TRADUCIR LAS PREGUNTAS Y RESPUESTAS
+
             socket.emit('triviaQuestionsAPI', trivia_response)
 
         }
