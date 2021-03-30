@@ -3,6 +3,7 @@ import { useParams, useHistory } from "react-router-dom";
 import { io } from "socket.io-client";
 import '../index.css';
 import TriviaQuestion from '../TriviaQuestion/TriviaQuestion'
+import Member from '../Member/Member'
 
 
 
@@ -20,6 +21,9 @@ const Guest = () => {
     const [trivia, setTrivia] = useState([]);
 
     const [time, setTime] = useState(10);
+
+    const [isCorrect, setIsCorrect] = useState(true);
+
 
     const history = useHistory();
 
@@ -101,7 +105,7 @@ const Guest = () => {
             alert("Termino!")
         }
 
-
+        setIsCorrect(question.answer_selected.is_correct)
 
         trivia[question_id].show = false;
 
@@ -115,7 +119,7 @@ const Guest = () => {
         }, 1000, trivia, question_id);
 
 
-
+        console.log(socket.id)
 
     }
 
@@ -135,25 +139,13 @@ const Guest = () => {
                 </div>
             </div>
             {Object.keys(members).map((key) => {
+                let isUser = false
+                if(key == socket.id){
+                    isUser = true
+                }
+
                 return (
-                    <>
-                        <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                                <span className="pl-5 pr-12 text-xl font-bold">1</span>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-10 h-10 rounded-full" />
-                            </div>
-                            <div className="flex-grow p-3 text-left">
-                                <div className="font-semibold text-gray-700">
-                                    {members[key].username}
-                                </div>
-                            </div>
-                            <div className="p-2">
-                                <span className="font-bold">{members[key].score} </span><span className="text-sm">pts</span>
-                            </div>
-                        </div>
-                    </>
+                    <Member member={members[key]} key={key} isCorrect={isCorrect} isUser={isUser}></Member>
                 )
 
 
