@@ -57,9 +57,6 @@ const Admin = () => {
                 type: type
             }
         })
-        // .then( (res) => {
-        //     console.log(res)
-        // })
         
         if (request.data.results.length > 0) {
             const trivia_response = request.data.results
