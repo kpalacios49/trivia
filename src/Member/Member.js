@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
 import CountUp from 'react-countup'
-
 import 'animate.css'
 
 const Member = (props) => {
@@ -16,6 +15,7 @@ const Member = (props) => {
 
     return (
         <div className={`bg-white w-full flex items-center px-1 my-1 rounded-xl ${animation} ${props.isUser ? 'bg-indigo-200' : 'bg-gray-50'}`}>
+
             <div className="flex items-center space-x-3">
                 <span className="pl-5 pr-12 text-xl font-bold">{ props.position }</span>
             </div>
@@ -31,6 +31,7 @@ const Member = (props) => {
 
                 <span className="font-bold"><CountUp end={props.member.score} /> </span><span className="text-sm">pts</span>
             </div>
+
         </div>
     )
 

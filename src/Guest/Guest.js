@@ -4,6 +4,8 @@ import { io } from "socket.io-client";
 import '../index.css';
 import TriviaQuestion from '../TriviaQuestion/TriviaQuestion'
 import Member from '../Member/Member'
+import Countdown from '../Countdown/Countdown'
+import 'animate.css'
 
 
 
@@ -29,6 +31,12 @@ const Guest = () => {
     const [membersScoreClass, setMembersScoreClass] = useState('hidden');
 
     const [membersClass, setMembersClass] = useState('');
+
+    const [startCountdown, setStartCountdown] = useState(false);
+
+    const [showTrivia, setShowTrivia] = useState(false);
+
+    
 
 
     const history = useHistory();
@@ -67,11 +75,19 @@ const Guest = () => {
 
         socket.on(`gameStarted`, (game) => {
 
-            if (game.trivia) game.trivia[question_id].show = true
+            setStartCountdown(true)
 
-            setTrivia(game.trivia ?? [])
 
-            setMembersClass('hidden')
+            setTimeout(() => {
+
+                if (game.trivia) game.trivia[question_id].show = true
+
+                setTrivia(game.trivia ?? [])
+    
+                setMembersClass('hidden')
+
+            }, 6000, game);
+
 
         })
 
@@ -80,8 +96,6 @@ const Guest = () => {
 
     const handleAnswerSelected = (question_id, question) => {
         const time_counter_finish = new Date().getTime() / 1000;
-
-
 
         question.response_time = time_counter_finish - time_counter_start
         question.time = time
@@ -121,9 +135,13 @@ const Guest = () => {
 
     }
 
+    // const showQuestions = () => {
+    //     alert("ra")
+    // }
+
+
     return (
         <div className="relative w-full max-w-md p-4 bg-white rounded-3xl">
-
 
             <div className={membersClass}>
                 {Object.keys(members).map((key) => {
@@ -151,6 +169,8 @@ const Guest = () => {
                     )
                 })}
             </div>
+
+            <Countdown start={startCountdown}></Countdown>
 
 
             <div className={membersScoreClass}>

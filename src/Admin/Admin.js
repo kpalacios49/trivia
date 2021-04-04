@@ -8,6 +8,10 @@ import { io } from "socket.io-client";
 import axios from 'axios';
 import TriviaQuestion from '../TriviaQuestion/TriviaQuestion'
 
+import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+import Loader from "react-loader-spinner";
+import Countdown from '../Countdown/Countdown'
+import 'animate.css'
 
 
 const Admin = () => {
@@ -19,6 +23,8 @@ const Admin = () => {
     const [members, setMembers] = useState([]);
 
     const [group, setGroup] = useState({})
+
+    const [loadTriviaApi, setLoadTriviaApi] = useState(false);
 
     // const [trivia, setTrivia] = useState([]);
 
@@ -37,6 +43,8 @@ const Admin = () => {
 
     const handleTriviaApi = async (event) => {
         event.preventDefault()
+
+        setLoadTriviaApi(true)
 
         const amount = event.target.amount.value;
         const category = event.target.category.value;
@@ -57,7 +65,7 @@ const Admin = () => {
                 type: type
             }
         })
-        
+
         if (request.data.results.length > 0) {
             const trivia_response = request.data.results
             trivia_response.map(q => {
@@ -75,12 +83,14 @@ const Admin = () => {
         else {
             console.log("No se encontraron preguntas con esas especificaciones")
         }
+        setLoadTriviaApi(false)
+
     }
 
     const startTrivia = () => {
         // Verificar que haya jugadores conectados
         // Verificar que haya QA cargadas
-        socket.emit('startTrivia', { state: "started", time_per_question : 10 })
+        socket.emit('startTrivia', { state: "started", time_per_question: 10 })
 
     }
 
@@ -90,6 +100,10 @@ const Admin = () => {
             [a[i], a[j]] = [a[j], a[i]];
         }
         return a;
+    }
+
+    const showQuestions = () => {
+        alert("ra")
     }
 
     useEffect(() => {
@@ -208,9 +222,17 @@ const Admin = () => {
                 </div>
 
 
-                <button class="mt-2 block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-3 font-semibold">
-                    Generate trivia API
+                <button class="mt-2 block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-3 font-semibold flex justify-center">
+                    {loadTriviaApi ? (<Loader
+                        type="ThreeDots"
+                        color="#FFF"
+                        height={30}
+                        width={30}
+                    />) : (<span>Generar preguntas</span>)}
+
+
                 </button>
+
 
                 {/* <button type="submit">Generate API URL</button> */}
             </form>
@@ -218,11 +240,11 @@ const Admin = () => {
                 Start
                 </button>
             <br />
-
+            <Countdown callback={showQuestions}></Countdown>
             <span>Conectados</span>
             <br />
             {members}
-{/* 
+            {/* 
             {trivia.map((t) => (
                 <TriviaQuestion trivia={t}></TriviaQuestion>
             ))} */}
