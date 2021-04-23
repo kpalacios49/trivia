@@ -11,6 +11,7 @@ import TriviaQuestion from '../TriviaQuestion/TriviaQuestion'
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import Loader from "react-loader-spinner";
 import Countdown from '../Countdown/Countdown'
+import Member from '../Member/Member'
 import 'animate.css'
 
 
@@ -25,6 +26,12 @@ const Admin = () => {
     const [group, setGroup] = useState({})
 
     const [loadTriviaApi, setLoadTriviaApi] = useState(false);
+
+    const [trivia, setTrivia] = useState([])
+
+    const [startCountdown, setStartCountdown] = useState(false)
+
+    const [gameStarted, setGameStarted] = useState(false);
 
     // const [trivia, setTrivia] = useState([]);
 
@@ -77,6 +84,8 @@ const Admin = () => {
 
             // HAY QUE TRADUCIR LAS PREGUNTAS Y RESPUESTAS
 
+            setTrivia(trivia_response ?? [])
+
             socket.emit('triviaQuestionsAPI', trivia_response)
 
         }
@@ -90,8 +99,16 @@ const Admin = () => {
     const startTrivia = () => {
         // Verificar que haya jugadores conectados
         // Verificar que haya QA cargadas
-        socket.emit('startTrivia', { state: "started", time_per_question: 10 })
+        console.log(members)
+        const players_ready = Object.entries(members).filter(member => !member[1].is_admin)
 
+        if (trivia.length == 0) return alert("Faltan generar las preguntas")
+
+        if (players_ready.length == 0) return alert("Faltan jugadores para poder empezar la trivia")
+
+        setStartCountdown(true)
+
+        socket.emit('startTrivia', { state: "started", time_per_question: 10 })
     }
 
     function shuffle(a) {
@@ -100,10 +117,6 @@ const Admin = () => {
             [a[i], a[j]] = [a[j], a[i]];
         }
         return a;
-    }
-
-    const showQuestions = () => {
-        alert("ra")
     }
 
     useEffect(() => {
@@ -118,36 +131,14 @@ const Admin = () => {
         }
         socket.connect();
 
-
         socket.on(`membersConnected`, (members) => {
             console.log(members)
 
-            const members_list = Object.keys(members).map((key) => {
-                // return <p>{members[key].username}</p>
-                return (
-                    <>
-                        <div className="bg-white w-full flex items-center p-2 rounded-3xl shadow border">
-                            <div className="flex items-center space-x-4">
-                                <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-16 h-16 rounded-full" />
-                            </div>
-                            <div className="flex-grow p-3">
-                                <div className="font-semibold text-gray-700">
-                                    {members[key].username}
-                                </div>
-                            </div>
-                            <div className="p-2">
-                                <span class="block h-4 w-4 bg-green-400 rounded-full bottom-0 right-0"></span>
-                            </div>
-                        </div>
-                    </>
-                )
-            })
-            setMembers(members_list)
+            setMembers(members)
         })
 
         socket.on(`gameStarted`, (game) => {
-            // setTrivia(game.trivia ?? [])
-            console.log("Empezó")
+            setGameStarted(true)
         })
 
         setGroup({
@@ -159,12 +150,12 @@ const Admin = () => {
     return (
         <div className="relative w-full max-w-md p-4 bg-white rounded-3xl">
 
-            <h2 className="text-medium text-xl">Grupo</h2>
-            <div class="relative text-gray-600 my-2 mb-4">
-                <span type="text" name="group_id" placeholder="Sala" class="w-52 bg-gray-100 h-20 px-5 rounded-lg text-5xl focus:outline-none text-center" >{group.group_id}</span>
-            </div>
+            <form onSubmit={handleTriviaApi} className={`${startCountdown ? 'hidden' : null}`}>
+                <h2 className="text-medium text-xl">Grupo</h2>
+                <div class="relative text-gray-600 my-2 mb-4">
+                    <span type="text" name="group_id" placeholder="Sala" class="w-52 bg-gray-100 h-20 px-5 rounded-lg text-5xl focus:outline-none text-center" >{group.group_id}</span>
+                </div>
 
-            <form onSubmit={handleTriviaApi}>
                 <div className="flex flex-col justify-center items-center">
                     {/* <label for="amount" className="text-sm">Cantidad de preguntas</label> */}
                     <input type="number" name="amount" id="amount" min="1" max="50" value="10" className="mt-2 bg-gray-50 h-10 px-5 pr-10 rounded-lg text-sm focus:outline-none w-3/4" />
@@ -235,19 +226,76 @@ const Admin = () => {
 
 
                 {/* <button type="submit">Generate API URL</button> */}
-            </form>
-            <button type="button" onClick={startTrivia} class="mt-2 block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-3 font-semibold">
-                Start
+                <button type="button" onClick={startTrivia} class="mt-2 block w-full max-w-xs mx-auto bg-indigo-500 hover:bg-indigo-700 focus:bg-indigo-700 text-white rounded-lg px-3 py-3 font-semibold">
+                    Start
                 </button>
+            </form>
+
             <br />
-            <Countdown callback={showQuestions}></Countdown>
-            <span>Conectados</span>
-            <br />
-            {members}
-            {/* 
-            {trivia.map((t) => (
-                <TriviaQuestion trivia={t}></TriviaQuestion>
-            ))} */}
+
+            <Countdown start={startCountdown}></Countdown>
+
+
+            <p className="font-semibold text-gray-700">Conectados por jugar</p>
+
+
+
+            <div className={`${gameStarted ? 'hidden' : null}`}>
+                {Object.keys(members).map((key) => {
+                    let isUser = false
+                    if (key == socket.id) {
+                        isUser = true
+                    }
+
+                    return (
+                        <div className={`bg-white w-full flex items-center px-1 my-1 rounded-xl bg-gray-50`}>
+                            <div className="flex items-center space-x-3">
+                                <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-10 h-10 rounded-full" />
+                            </div>
+                            <div className="flex-grow p-3 text-left">
+                                <div className="font-semibold text-gray-700">
+                                    {members[key].username}
+                                </div>
+                            </div>
+                            <div className="p-2">
+                                <span className="block h-4 w-4 bg-green-400 rounded-full bottom-0 right-0"></span>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+
+
+
+            <div className={`w-full ${!gameStarted ? 'hidden' : null}`}>
+                <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl">
+                    <div className="flex items-center space-x-3 pr-8 font-semibold text-gray-700">
+                        <span>Clasificación</span>
+                    </div>
+                    <div className="flex-grow p-3 text-left">
+                        <div className="font-semibold text-gray-700">
+                            Nombre
+                    </div>
+                    </div>
+                    <div className="p-2">
+                        <span className="font-semibold text-gray-700">Puntuación</span>
+                    </div>
+                </div>
+                {Object.entries(members)
+                    .filter(member => !member[1].is_admin)
+                    .sort((a, b) => b[1].score - a[1].score)
+                    .map((member, index) => {
+                        let isUser = false
+                        if (member[0] == socket.id) {
+                            isUser = true
+                        }
+                        return (
+                            <Member position={index + 1} member={member[1]} key={member[0]} isCorrect={false} isUser={isUser}></Member>
+                        )
+                    })}
+
+            </div>
 
 
 

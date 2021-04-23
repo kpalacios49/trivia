@@ -29,7 +29,7 @@ const Countdown = (props) => {
     }, [time, props.start])
 
     return (
-        <div className={`${hideCountdown}`}>
+        <div className={`${hideCountdown} h-96 flex justify-center items-center`}>
             <div className={`${time == 0 ? 'hidden' : ''}`}>
                 <p className={`text-8xl ${timeAnimation}`}>{time}</p>
                 <p className={`text-4xl`}>Preparate!</p>

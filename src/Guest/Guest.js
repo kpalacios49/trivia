@@ -36,7 +36,7 @@ const Guest = () => {
 
     const [showTrivia, setShowTrivia] = useState(false);
 
-    
+
 
 
     const history = useHistory();
@@ -74,7 +74,7 @@ const Guest = () => {
 
 
         socket.on(`gameStarted`, (game) => {
-
+            setMembersClass('hidden')
             setStartCountdown(true)
 
 
@@ -83,10 +83,9 @@ const Guest = () => {
                 if (game.trivia) game.trivia[question_id].show = true
 
                 setTrivia(game.trivia ?? [])
-    
-                setMembersClass('hidden')
 
-            }, 6000, game);
+
+            }, 7099, game);
 
 
         })
@@ -125,23 +124,19 @@ const Guest = () => {
         setMembersScoreClass('')
 
         setTimeout(() => {
+            if (all_answers_made.length > 0) setMembersScoreClass('hidden')
+
             if (trivia[question_id]) trivia[question_id].show = true;
             setTrivia([...trivia])
-            
-            if (all_answers_made > 0) setMembersScoreClass('hidden')
+            // setMembersScoreClass('hidden')
 
             time_counter_start = new Date().getTime() / 1000
-        }, 5000, trivia, question_id);
+        }, 5000, trivia, question_id, all_answers_made);
 
     }
 
-    // const showQuestions = () => {
-    //     alert("ra")
-    // }
-
-
     return (
-        <div className="relative w-full max-w-md p-4 bg-white rounded-3xl">
+        <div className="relative w-full max-w-md p-4 bg-white rounded-3xl flex justify-center items-center" style={startCountdown ? { minHeight: '24rem' } : null}>
 
             <div className={membersClass}>
                 {Object.keys(members).map((key) => {
@@ -151,8 +146,6 @@ const Guest = () => {
                     }
 
                     return (
-                        // <Member member={members[key]} key={key} isCorrect={isCorrect} isUser={isUser}></Member>
-
                         <div className={`bg-white w-full flex items-center px-1 my-1 rounded-xl bg-gray-50`}>
                             <div className="flex items-center space-x-3">
                                 <img src={decodeURIComponent(members[key].profile_image)} alt="imagen perfil" className="w-10 h-10 rounded-full" />
@@ -163,7 +156,7 @@ const Guest = () => {
                                 </div>
                             </div>
                             <div className="p-2">
-                                <span class="block h-4 w-4 bg-green-400 rounded-full bottom-0 right-0"></span>
+                                <span className="block h-4 w-4 bg-green-400 rounded-full bottom-0 right-0"></span>
                             </div>
                         </div>
                     )
@@ -173,7 +166,7 @@ const Guest = () => {
             <Countdown start={startCountdown}></Countdown>
 
 
-            <div className={membersScoreClass}>
+            <div className={`${membersScoreClass} w-full`}>
                 <div className="bg-white w-full flex items-center px-1 my-1 rounded-xl">
                     <div className="flex items-center space-x-3 pr-8 font-semibold text-gray-700">
                         <span>Clasificación</span>
@@ -187,17 +180,16 @@ const Guest = () => {
                         <span className="font-semibold text-gray-700">Puntuación</span>
                     </div>
                 </div>
-                {Object.entries(members).sort((a, b) => {
-                    return b[1].score - a[1].score
-                })
+                {Object.entries(members)
+                    .filter(member => !member[1].is_admin)
+                    .sort((a, b) => b[1].score - a[1].score)
                     .map((member, index) => {
                         let isUser = false
                         if (member[0] == socket.id) {
                             isUser = true
                         }
-
                         return (
-                            <Member position={index+1} member={member[1]} key={member[0]} isCorrect={isCorrect} isUser={isUser}></Member>
+                            <Member position={index + 1} member={member[1]} key={member[0]} isCorrect={isCorrect} isUser={isUser}></Member>
                         )
                     })}
 
@@ -207,6 +199,7 @@ const Guest = () => {
                 <TriviaQuestion question={question} question_id={question_id} onAnswerSelected={handleAnswerSelected}></TriviaQuestion>
             ))}
         </div>
+
 
     )
 
